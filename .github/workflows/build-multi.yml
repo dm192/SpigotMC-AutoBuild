@@ -134,7 +134,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-          for file in ./collected-jars/spigot-*.jar ./collected-jars/spigot-*.sha256; do
+          for file in $(find ./collected-jars -type f \( -name "spigot-*.jar" -o -name "spigot-*.sha256" \)); do
             fname=$(basename "$file")
             echo "上传 $fname 到 Release..."
             gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY"
