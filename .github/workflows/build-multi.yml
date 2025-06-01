@@ -53,7 +53,7 @@ jobs:
         run: |
           java -jar BuildTools.jar --rev "${{ matrix.spigot_version }}"
 
-      - name: 🔍 找到 BuildTools 生成的 Jar，并重命名为 spigot-<版本>.jar（如需）
+      - name: 🔍 找到生成的 Jar
         id: rename_jar
         run: |
           ORIGINAL_JAR=$(ls spigot-*.jar | head -n1)
@@ -77,11 +77,14 @@ jobs:
             ${{ steps.rename_jar.outputs.jar_name }}.sha256
 
   release:
-    name: 🏷️ 生成单一 Release 并上传所有版本
+    name: 🏷️ 上传至 Release
     needs: build
     runs-on: ubuntu-latest
 
     steps:
+      - name: ✔️ Checkout 代码
+        uses: actions/checkout@v4
+        
       - name: ⏱️ 获取时间戳
         id: datetime
         run: |
