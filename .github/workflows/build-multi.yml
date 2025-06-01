@@ -132,17 +132,7 @@ jobs:
         run: |
           TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
           RELEASE_NAME="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-
-          # BODY="🎉 **自动构建完成！**\n"
-          # BODY+="\n- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}"
-          # BODY+="\n- **包含版本**："
-          # BODY+="\n${{ steps.gen_versions.outputs.versions_md }}\n"
-          echo "🎉 **又是一次成功的构建！** " >> $BODY
-          echo -e "🚀 **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}" >> $BODY
-          echo -e "📦 **包含版本**：" >> $BODY
-          echo -e "${{ steps.gen_versions.outputs.versions_md }}" >> $BODY
-          echo -e "⭐ 喜欢的话点个 Star 吧~" >> $BODY
-
+          BODY=$(printf "🎉 **又是一次成功的构建！**\n🚀 **构建时间（北京时间）**：%s\n📦 **包含版本**：\n%s\n⭐ 喜欢的话点个 Star 吧~\n" "${{ steps.datetime.outputs.timestamp }}" "${{ steps.gen_versions.outputs.versions_md }}")
           echo -e "$BODY"
           gh release create "$TAG" --title "$RELEASE_NAME" --notes "$BODY"
 
