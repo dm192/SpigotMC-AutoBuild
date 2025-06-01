@@ -58,7 +58,9 @@ jobs:
           ORIGINAL_JAR=$(ls spigot-*.jar | head -n1)
           # 新文件名统一为 spigot-<版本>.jar
           NEW_JAR="spigot-${{ matrix.spigot_version }}.jar"
-          mv "$ORIGINAL_JAR" "$NEW_JAR"
+          if [ "$ORIGINAL_JAR" != "$NEW_JAR" ]; then
+            mv "$ORIGINAL_JAR" "$NEW_JAR"
+          fi
           echo "jar_name=$NEW_JAR" >> $GITHUB_OUTPUT
 
       - name: 🔐 生成 Jar 的 SHA256 校验文件，并重命名
