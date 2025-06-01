@@ -3,7 +3,7 @@ name: Spigot 多版本自动构建
 
 # 声明权限，确保 upload/download artifact 可以正常执行
 permissions:
-  contents: read        # 用于 checkout、download-artifact、create tag 等
+  contents: write        # 用于 checkout、download-artifact、create tag 等
   actions: write        # 用于 upload-artifact、download-artifact
 
 on:
