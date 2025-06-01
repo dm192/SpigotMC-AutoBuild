@@ -1,7 +1,7 @@
 name: Spigot 多版本自动构建
 # 描述：自动构建 Spigot 多个版本的 Jar 包，并生成 Release
-
-# 声明权限，确保 upload/download artifact 可以正常执行
+# 触发条件：手动触发或每日定时触发
+# 需要的权限：写入仓库内容和 Actions 相关权限
 permissions:
   contents: write        # 用于 checkout、download-artifact、create tag 等
   actions: write        # 用于 upload-artifact、download-artifact
@@ -106,7 +106,7 @@ jobs:
             ver=${ver%.jar}
             VERSIONS_MD="$VERSIONS_MD- $ver\n"
           done
-          # 去掉最后一个换行符
+          # 去掉最后的换行符
           VERSIONS_MD="${VERSIONS_MD%\\n}"
           echo "versions_md<<EOF" >> $GITHUB_OUTPUT
           echo -e "$VERSIONS_MD" >> $GITHUB_OUTPUT
@@ -118,13 +118,18 @@ jobs:
         run: |
           TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
           RELEASE_NAME="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-          BODY="🎉 **自动构建完成！**\n"
-          BODY+="\n- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}"
-          BODY+="\n- **包含版本**："
-          BODY+="\n${{ steps.gen_versions.outputs.versions_md }}\n"
+
+          # BODY="🎉 **自动构建完成！**\n"
+          # BODY+="\n- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}"
+          # BODY+="\n- **包含版本**："
+          # BODY+="\n${{ steps.gen_versions.outputs.versions_md }}\n"
+          echo "🎉 **又是一次成功的构建！** " >> $BODY
+          echo -e "🚀 **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}" >> $BODY
+          echo -e "📦 **包含版本**：" >> $BODY
+          echo -e "${{ steps.gen_versions.outputs.versions_md }}" >> $BODY
+          echo -e "⭐ 喜欢的话点个 Star 吧~" >> $BODY
 
           echo -e "$BODY"
-          # 创建 Release（--repo 默认使用 GITHUB_REPOSITORY）
           gh release create "$TAG" --title "$RELEASE_NAME" --notes "$BODY"
 
       - name: 📦 上传文件到 Release
