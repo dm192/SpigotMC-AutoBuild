@@ -130,6 +130,8 @@ jobs:
           gh release create "$TAG" --title "$RELEASE_NAME" --notes "$BODY"
 
       - name: 📦 上传所有版本和校验文件到 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
           for file in ./collected-jars/spigot-*.jar ./collected-jars/spigot-*.sha256; do
