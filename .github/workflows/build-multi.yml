@@ -46,7 +46,7 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java_version }}
-          cache: 'maven'
+          # 去掉 cache: 'maven'，否则会去找 pom.xml，导致报错
 
       - name: 🚀 编译 Spigot ${{ matrix.spigot_version }}
         run: |
