@@ -38,6 +38,107 @@ jobs:
 
       - name: 🌐 下载最新 BuildTools.jar
         run: |
+          curl -L -o BuildTools.jar \
+            https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+
+      - name: ☕ 设置 Zulu JDK ${{ matrix.java_version }}
+        uses: actions/setup-java@v4.7.1
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java_version }}
+          cache: 'maven'
+
+      - name: 🚀 编译 Spigot ${{ matrix.spigot_version }}
+        run: |
+          java -jar BuildTools.jar --rev "${{ matrix.spigot_version }}"
+
+      - name: 🔍 找到构建好的 Jar
+        id: find_jar
+        run: |
+          JAR_FILE=$(ls spigot-*.jar | head -n1)
+          echo "jar_name=$JAR_FILE" >> $GITHUB_OUTPUT
+
+      - name: 🔐 生成 Jar 的 SHA256 校验文件
+        run: |
+          JAR="${{ steps.find_jar.outputs.jar_name }}"
+          sha256sum "$JAR" > "${JAR}.sha256"
+
+      - name: 📦 上传构建产物（Artifact）
+        uses: actions/upload-artifact@v3.0.0
+        with:
+          name: jar-${{ matrix.spigot_version }}
+          path: |
+            ${{ steps.find_jar.outputs.jar_name }}
+            ${{ steps.find_jar.outputs.jar_name }}.sha256
+
+  release:
+    name: 🏷️ 生成单一 Release 并上传所有版本
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⏱️ 获取北京时间戳
+        id: datetime
+        run: |
+          NOW=$(date -d '+8 hour' +'%Y%m%d-%H%M%S')
+          echo "timestamp=$NOW" >> $GITHUB_OUTPUT
+
+      - name: 📥 下载所有构建产物
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: jar-*
+          path: ./collected-jars
+
+      - name: 📋 生成版本列表 Markdown
+        id: gen_versions
+        run: |
+          VERSIONS_MD=""
+          for jar in collected-jars/spigot-*.jar; do
+            filename=$(basename "$jar")
+            ver=${filename#spigot-}
+            ver=${ver%.jar}
+            VERSIONS_MD="$VERSIONS_MD- $ver\n"
+          done
+          VERSIONS_MD="${VERSIONS_MD%\\n}"
+          echo "versions_md<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$VERSIONS_MD" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: 🏷️ 创建 GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: "AutoBuild-${{ steps.datetime.outputs.timestamp }}"
+          release_name: "AutoBuild-${{ steps.datetime.outputs.timestamp }}"
+          body: |
+            🎉 **自动构建完成！**
+
+            - **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}
+            - **包含版本**：
+            ${{ steps.gen_versions.outputs.versions_md }}
+
+            - **校验文件**：每个 Jar 都生成了对应的 SHA256（`.sha256`），下载之后可自行校验。  
+            - **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。  
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📦 上传所有版本和校验文件到 Release
+        run: |
+          for file in ./collected-jars/spigot-*.jar ./collected-jars/spigot-*.sha256; do
+            fname=$(basename "$file")
+            echo "上传 $fname 到 Release..."
+            gh release upload "AutoBuild-${{ steps.datetime.outputs.timestamp }}" "$file" --repo "$GITHUB_REPOSITORY"
+          done
+
+      - name: ✅ 完成：所有版本已上传
+        run: |
+          echo "✨ 发布完成：Release AutoBuild-${{ steps.datetime.outputs.timestamp }} 包含以下版本："
+          echo -e "${{ steps.gen_versions.outputs.versions_md }}"
+        run: rm -rf ~/.m2/repository
+
+      - name: 🌐 下载最新 BuildTools.jar
+        run: |
           curl -L -o BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
 
       - name: ☕ 设置 Zulu JDK ${{ matrix.java_version }}
