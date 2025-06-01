@@ -58,7 +58,7 @@ jobs:
           sha256sum "$JAR" > "${JAR}.sha256"
 
       - name: 📦 上传构建产物（Artifact）
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: jar-${{ matrix.spigot_version }}
           path: |
@@ -78,7 +78,7 @@ jobs:
           echo "timestamp=$NOW" >> $GITHUB_OUTPUT
 
       - name: 📥 下载所有构建产物
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           name: jar-*
           path: ./collected-jars
