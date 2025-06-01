@@ -1,6 +1,6 @@
 # 🚀 SpigotMC-AutoBuild
 
-> 自动化构建多版本 Spigot Jar 并一键发布 Release！  
+> 自动化构建多版本 Spigot 服务端！  
 > Powered by GitHub Actions ✨
 
 ---
