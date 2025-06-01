@@ -64,7 +64,7 @@ jobs:
           sha256sum "$JAR" > "${JAR}.sha256"
 
       - name: 📦 上传构建产物（Artifact）
-        uses: actions/upload-artifact@v3.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: jar-${{ matrix.spigot_version }}
           path: |
@@ -84,7 +84,7 @@ jobs:
           echo "timestamp=$NOW" >> $GITHUB_OUTPUT
 
       - name: 📥 下载所有构建产物
-        uses: actions/download-artifact@v3.0.0
+        uses: actions/download-artifact@v4
         with:
           name: jar-*
           path: ./collected-jars
@@ -99,6 +99,7 @@ jobs:
             ver=${ver%.jar}
             VERSIONS_MD="$VERSIONS_MD- $ver\n"
           done
+          # 去掉最后一个换行符
           VERSIONS_MD="${VERSIONS_MD%\\n}"
           echo "versions_md<<EOF" >> $GITHUB_OUTPUT
           echo -e "$VERSIONS_MD" >> $GITHUB_OUTPUT
@@ -128,7 +129,8 @@ jobs:
           for file in ./collected-jars/spigot-*.jar ./collected-jars/spigot-*.sha256; do
             fname=$(basename "$file")
             echo "上传 $fname 到 Release..."
-            gh release upload "AutoBuild-${{ steps.datetime.outputs.timestamp }}" "$file" --repo "$GITHUB_REPOSITORY"
+            gh release upload "AutoBuild-${{ steps.datetime.outputs.timestamp }}" \
+              "$file" --repo "$GITHUB_REPOSITORY"
           done
 
       - name: ✅ 完成：所有版本已上传
