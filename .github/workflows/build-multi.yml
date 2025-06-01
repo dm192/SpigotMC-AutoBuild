@@ -114,17 +114,14 @@ jobs:
         run: |
           TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
           RELEASE_NAME="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-          BODY=$(cat <<EOF
-🎉 **自动构建完成！**
+          BODY="🎉 **自动构建完成！**\n\n"
+          BODY+="- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}\n"
+          BODY+="- **包含版本**：\n"
+          BODY+="${{ steps.gen_versions.outputs.versions_md }}\n\n"
+          BODY+="- **校验文件**：每个 Jar 都生成了对应的 SHA256（.sha256），下载之后可自行校验。\n"
+          BODY+="- **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。\n"
 
-- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}
-- **包含版本**：
-${{ steps.gen_versions.outputs.versions_md }}
-
-- **校验文件**：每个 Jar 都生成了对应的 SHA256（.sha256），下载之后可自行校验。  
-- **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。  
-EOF
-)
+          echo -e "$BODY"
           # 创建 Release（--repo 默认使用 GITHUB_REPOSITORY）
           gh release create "$TAG" --title "$RELEASE_NAME" --notes "$BODY"
 
