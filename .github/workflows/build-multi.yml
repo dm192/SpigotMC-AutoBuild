@@ -2,7 +2,7 @@ name: Spigot 多版本统一 Release
 
 # 声明权限，确保 upload/download artifact 可以正常执行
 permissions:
-  contents: read        # 用于 checkout、create-release 等操作
+  contents: read        # 用于 checkout、download-artifact、create tag 等
   actions: write        # 用于 upload-artifact、download-artifact
 
 on:
@@ -108,31 +108,33 @@ jobs:
           echo -e "$VERSIONS_MD" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: 🏷️ 创建 GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: "AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-          release_name: "AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-          body: |
-            🎉 **自动构建完成！**
+      - name: 🏷️ 使用 GH CLI 创建 GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
+          RELEASE_NAME="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
+          BODY=$(cat <<EOF
+🎉 **自动构建完成！**
 
-            - **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}
-            - **包含版本**：
-            ${{ steps.gen_versions.outputs.versions_md }}
+- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}
+- **包含版本**：
+${{ steps.gen_versions.outputs.versions_md }}
 
-            - **校验文件**：每个 Jar 都生成了对应的 SHA256（`.sha256`），下载之后可自行校验。  
-            - **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。  
-          draft: false
-          prerelease: false
+- **校验文件**：每个 Jar 都生成了对应的 SHA256（.sha256），下载之后可自行校验。  
+- **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。  
+EOF
+)
+          # 创建 Release（--repo 默认使用 GITHUB_REPOSITORY）
+          gh release create "$TAG" --title "$RELEASE_NAME" --notes "$BODY"
 
       - name: 📦 上传所有版本和校验文件到 Release
         run: |
+          TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
           for file in ./collected-jars/spigot-*.jar ./collected-jars/spigot-*.sha256; do
             fname=$(basename "$file")
             echo "上传 $fname 到 Release..."
-            gh release upload "AutoBuild-${{ steps.datetime.outputs.timestamp }}" \
-              "$file" --repo "$GITHUB_REPOSITORY"
+            gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY"
           done
 
       - name: ✅ 完成：所有版本已上传
