@@ -13,7 +13,7 @@ on:
 
 jobs:
   build:
-    name: 🚧 矩阵构建所有版本
+    name: 🚧 构建所有版本
     runs-on: ubuntu-latest
 
     strategy:
@@ -63,12 +63,12 @@ jobs:
           fi
           echo "jar_name=$NEW_JAR" >> $GITHUB_OUTPUT
 
-      - name: 🔐 生成 Jar 的 SHA256 校验文件
+      - name: 🔐 生成校验文件
         run: |
           JAR="${{ steps.rename_jar.outputs.jar_name }}"
           sha256sum "$JAR" > "${JAR}.sha256"
 
-      - name: 📦 上传构建产物（Artifact）
+      - name: 📦 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: jar-${{ matrix.spigot_version }}
@@ -96,11 +96,11 @@ jobs:
         with:
           path: ./collected-jars
 
-      - name: 📋 生成版本列表 Markdown
+      - name: 📋 生成版本列表
         id: gen_versions
         run: |
           VERSIONS_MD=""
-          for jar in collected-jars/spigot-*.jar; do
+          for jar in $(find collected-jars -type f -name "spigot-*.jar"); do
             filename=$(basename "$jar")
             ver=${filename#spigot-}
             ver=${ver%.jar}
@@ -112,24 +112,22 @@ jobs:
           echo -e "$VERSIONS_MD" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: 🏷️ 创建 GitHub Release
+      - name: 🏷️ 创建 Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
           RELEASE_NAME="AutoBuild-${{ steps.datetime.outputs.timestamp }}"
-          BODY="🎉 **自动构建完成！**\n\n"
-          BODY+="- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}\n"
-          BODY+="- **包含版本**：\n"
-          BODY+="${{ steps.gen_versions.outputs.versions_md }}\n\n"
-          BODY+="- **校验文件**：每个 Jar 都生成了对应的 SHA256（.sha256），下载之后可自行校验。\n"
-          BODY+="- **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。\n"
+          BODY="🎉 **自动构建完成！**\n"
+          BODY+="\n- **构建时间（北京时间）**：${{ steps.datetime.outputs.timestamp }}"
+          BODY+="\n- **包含版本**："
+          BODY+="\n${{ steps.gen_versions.outputs.versions_md }}\n"
 
           echo -e "$BODY"
           # 创建 Release（--repo 默认使用 GITHUB_REPOSITORY）
           gh release create "$TAG" --title "$RELEASE_NAME" --notes "$BODY"
 
-      - name: 📦 上传所有版本和校验文件到 Release
+      - name: 📦 上传文件到 Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
