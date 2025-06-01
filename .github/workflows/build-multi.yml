@@ -46,21 +46,24 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java_version }}
-          # 去掉 cache: 'maven'，否则会去找 pom.xml，导致报错
 
       - name: 🚀 编译 Spigot ${{ matrix.spigot_version }}
         run: |
           java -jar BuildTools.jar --rev "${{ matrix.spigot_version }}"
 
-      - name: 🔍 找到构建好的 Jar
-        id: find_jar
+      - name: 🔍 找到构建好的 Jar，并重命名为 spigot-<版本>.jar
+        id: rename_jar
         run: |
-          JAR_FILE=$(ls spigot-*.jar | head -n1)
-          echo "jar_name=$JAR_FILE" >> $GITHUB_OUTPUT
+          # 找到 BuildTools 生成的 spigot-*.jar
+          ORIGINAL_JAR=$(ls spigot-*.jar | head -n1)
+          # 新文件名统一为 spigot-<版本>.jar
+          NEW_JAR="spigot-${{ matrix.spigot_version }}.jar"
+          mv "$ORIGINAL_JAR" "$NEW_JAR"
+          echo "jar_name=$NEW_JAR" >> $GITHUB_OUTPUT
 
-      - name: 🔐 生成 Jar 的 SHA256 校验文件
+      - name: 🔐 生成 Jar 的 SHA256 校验文件，并重命名
         run: |
-          JAR="${{ steps.find_jar.outputs.jar_name }}"
+          JAR="${{ steps.rename_jar.outputs.jar_name }}"
           sha256sum "$JAR" > "${JAR}.sha256"
 
       - name: 📦 上传构建产物（Artifact）
@@ -68,8 +71,8 @@ jobs:
         with:
           name: jar-${{ matrix.spigot_version }}
           path: |
-            ${{ steps.find_jar.outputs.jar_name }}
-            ${{ steps.find_jar.outputs.jar_name }}.sha256
+            ${{ steps.rename_jar.outputs.jar_name }}
+            ${{ steps.rename_jar.outputs.jar_name }}.sha256
 
   release:
     name: 🏷️ 生成单一 Release 并上传所有版本
@@ -83,10 +86,9 @@ jobs:
           NOW=$(date -d '+8 hour' +'%Y%m%d-%H%M%S')
           echo "timestamp=$NOW" >> $GITHUB_OUTPUT
 
-      - name: 📥 下载所有构建产物
+      - name: 📥 下载所有构建产物（不指定 name，自动拉取所有 artifact）
         uses: actions/download-artifact@v4
         with:
-          name: jar-*
           path: ./collected-jars
 
       - name: 📋 生成版本列表 Markdown
