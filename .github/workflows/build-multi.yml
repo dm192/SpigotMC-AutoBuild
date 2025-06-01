@@ -25,7 +25,7 @@ jobs:
           - spigot_version: '1.17.1'
             java_version: '17'
           - spigot_version: '1.20.4'
-            java_version: '17'
+            java_version: '21'
           - spigot_version: '1.21.1'
             java_version: '21'
 
@@ -38,8 +38,9 @@ jobs:
 
       - name: 🌐 下载最新 BuildTools.jar
         run: |
-          curl -L -o BuildTools.jar \
-            https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+          wget --retry-connrefused --retry-on-http-error=429,500,502,503,504 \
+               --waitretry=5 -O BuildTools.jar \
+               https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
 
       - name: ☕ 设置 Zulu JDK ${{ matrix.java_version }}
         uses: actions/setup-java@v4.7.1
@@ -51,19 +52,17 @@ jobs:
         run: |
           java -jar BuildTools.jar --rev "${{ matrix.spigot_version }}"
 
-      - name: 🔍 找到构建好的 Jar，并重命名为 spigot-<版本>.jar
+      - name: 🔍 找到 BuildTools 生成的 Jar，并重命名为 spigot-<版本>.jar（如需）
         id: rename_jar
         run: |
-          # 找到 BuildTools 生成的 spigot-*.jar
           ORIGINAL_JAR=$(ls spigot-*.jar | head -n1)
-          # 新文件名统一为 spigot-<版本>.jar
           NEW_JAR="spigot-${{ matrix.spigot_version }}.jar"
           if [ "$ORIGINAL_JAR" != "$NEW_JAR" ]; then
             mv "$ORIGINAL_JAR" "$NEW_JAR"
           fi
           echo "jar_name=$NEW_JAR" >> $GITHUB_OUTPUT
 
-      - name: 🔐 生成 Jar 的 SHA256 校验文件，并重命名
+      - name: 🔐 生成 Jar 的 SHA256 校验文件
         run: |
           JAR="${{ steps.rename_jar.outputs.jar_name }}"
           sha256sum "$JAR" > "${JAR}.sha256"
@@ -126,7 +125,6 @@ jobs:
             - **下载方式**：点击上方 Release 名称，所有 Jar + 校验文件都在附件里。  
           draft: false
           prerelease: false
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 📦 上传所有版本和校验文件到 Release
         run: |
