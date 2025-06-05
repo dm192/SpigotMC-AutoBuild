@@ -66,7 +66,7 @@ jobs:
           - spigot_version: '1.16.5'
             java_version: '8'
           - spigot_version: '1.17'
-            java_version: '17'
+            java_version: '16'
           - spigot_version: '1.17.1'
             java_version: '17'
           - spigot_version: '1.18'
