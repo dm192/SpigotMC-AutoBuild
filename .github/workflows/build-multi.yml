@@ -8,8 +8,8 @@ permissions:
 
 on:
   workflow_dispatch: {}
-  schedule:
-    - cron: '0 0 * * *'  # 每日 UTC 0:00（北京时间 8:00）自动触发
+  #schedule:
+    #- cron: '0 0 * * *'  # 每日 UTC 0:00（北京时间 8:00）自动触发
 
 jobs:
   build:
